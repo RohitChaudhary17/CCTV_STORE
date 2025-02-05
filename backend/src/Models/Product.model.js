@@ -4,10 +4,11 @@ const { Schema } = mongoose;
 // Define the Product schema with indexes
 const productSchema = new Schema(
   {
-    name: {
+    productName: {
       type: String,
       required: true,
-      trim: true,  
+      trim: true,
+      unique:true,  
     },
     description: {
       type: String,
@@ -38,6 +39,9 @@ const productSchema = new Schema(
       type: [String],
       required: false,
     },
+    color:{
+      type:String
+    }
   },
   { timestamps: true }
 );

@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true } // Mongoose will automatically add createdAt and updatedAt
 );
 
-userSchema.index({ phoneNumber : 1 })
+
 
 
 userSchema.methods.generateAccessToken = async function () {

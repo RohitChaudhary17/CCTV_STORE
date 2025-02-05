@@ -23,6 +23,7 @@ import userRouter from "./Routes/User.route.js";
 import brandRouter from "./Routes/Brand.route.js";
 import categoryRouter from "./Routes/Category.route.js";
 import productRouter from "./Routes/Product.route.js";
+import errorHandler from "./Middlewares/ErrorHandler.middleware.js";
 
 
 app.use('/api/v1/auth/' , authRouter)
@@ -32,7 +33,7 @@ app.use('/api/v1/brand' , brandRouter)
 app.use('/api/v1/products' , productRouter)
 
 
-
+app.use(errorHandler);
 
 
 export {app}

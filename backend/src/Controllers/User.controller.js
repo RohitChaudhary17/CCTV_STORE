@@ -1,11 +1,10 @@
 import UserModel from "../Models/Users.model.js"
+import { sendSuccessResponse } from "../Utils/SuccessResponse.utils.js";
 
 
 
 
 const getUser = async (req , res) => {
-
-// const {user} = req.body
 
 const user = await UserModel.findById(req.user._id);
 
@@ -14,9 +13,12 @@ if(!user){
   .json({message:'user not found'})
 }
 
-return res.status(201).json({user})
+return sendSuccessResponse(res, 200 , 'user fetched successfully', 'user' , user)
 
 }
+
+
+
 
 export {
   getUser

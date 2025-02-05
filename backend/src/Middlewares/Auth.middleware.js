@@ -214,16 +214,17 @@
 
 import jwt from 'jsonwebtoken';
 import UserModel from '../Models/Users.model.js';
+import ApiError from '../Utils/ApiError.utils.js';
 
 
-// Middleware to protect routes and refresh access token when expired
+
 const VerifyJWT = async (req, res, next) => {
     // Get the access token from the cookies (assuming it's stored in HTTP-only cookies)
     const accessToken = req.cookies.accessToken;
 
     // If there's no access token, reject the request
     if (!accessToken) {
-        return res.status(401).json({ message: 'Access token is missing. Please login.' });
+       return next(new ApiError(401, 'Access token is missing. Please login.'));
     }
 
     try {
@@ -232,8 +233,9 @@ const VerifyJWT = async (req, res, next) => {
 
         // 2. Check if the user exists with the userId from the token
         const user = await UserModel.findById(decodedAccessToken.userId);
+        
         if (!user) {
-            return res.status(403).json({ message: 'Invalid token' });
+            return next(new ApiError(403, 'Invalid token'));
         }
 
         // 3. If the access token is valid, set the userId and proceed to the next middleware
@@ -252,7 +254,9 @@ const VerifyJWT = async (req, res, next) => {
             // Query the database to get the stored refresh token for the user
             const user = await UserModel.findById(userIdFromAccessToken);
             if (!user || !user.refreshToken) {
-                return res.status(401).json({ message: 'No refresh token found. Please login again.' });
+                //return res.status(401).json({ message: 'No refresh token found. Please login again.' });
+
+          return next(new ApiError(401, 'No refresh token found. Please login again.'));
             }
 
             try {
@@ -261,12 +265,16 @@ const VerifyJWT = async (req, res, next) => {
 
                 // Ensure the refresh token belongs to the same user
                 if (decodedRefreshToken.userId !== userIdFromAccessToken) {
-                    return res.status(401).json({ message: 'Refresh token does not belong to the current user.' });
+                    //return res.status(401).json({ message: 'Refresh token does not belong to the current user.' });
+                                       return next(new ApiError(401, 'Refresh token does not belong to the current user.'));
                 }
 
                 // Generate a new access token and refresh token using model methods
                 const newAccessToken = await user.generateAccessToken();
                 const newRefreshToken = await user.generateRefreshToken();
+
+                console.log('newAccessToken :- ' , newAccessToken)
+                console.log('newRefreshToken :- ', newRefreshToken)
 
                 // Save the new refresh token in the database
                 user.refreshToken = newRefreshToken;
@@ -282,13 +290,137 @@ const VerifyJWT = async (req, res, next) => {
                 return next(); // Continue to next middleware
 
             } catch (refreshErr) {
-                return res.status(401).json({ message: 'Invalid refresh token. Please login again.' });
+               // return res.status(401).json({ message: 'Invalid refresh token. Please login again.' });
+
+                return next(new ApiError(401, 'Invalid refresh token. Please login again.'));
+
             }
         }
 
         // If the access token is expired but still valid, handle token verification failure
-        return res.status(401).json({ message: 'Access token is expired or invalid. Please login again.' });
+        //return res.status(401).json({ message: 'Access token is expired or invalid. Please login again.' });
+
+ return next(new ApiError(401, 'Access token is expired or invalid. Please login again.'));
     }
 };
 
 export default VerifyJWT;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const VerifyJWT = async (req, res, next) => {
+//     // Get the access token from the cookies (assuming it's stored in HTTP-only cookies)
+//     const accessToken = req.cookies.accessToken;
+
+//     // If there's no access token, reject the request
+//     if (!accessToken) {
+//         // Instead of throwing directly, pass the error to the next handler using next()
+//         return next(new ApiError(401, 'Access token is missing. Please login.'));
+//     }
+
+//     try {
+//         // 1. Verify the access token using the secret key
+//         const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+
+//         // 2. Check if the user exists with the userId from the token
+//         const user = await UserModel.findById(decodedAccessToken.userId);
+
+//         if (!user) {
+//             // Instead of throwing directly, pass the error to the next handler using next()
+//             return next(new ApiError(403, 'Invalid token'));
+//         }
+
+//         // 3. If the access token is valid, set the userId and proceed to the next middleware
+//         req.user = user;
+//         return next(); // Token is valid, proceed
+//     } catch (err) {
+//         const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+//         const decodedAccessToken = jwt.decode(accessToken); // Decode to check expiry
+//         const isAccessTokenExpired = decodedAccessToken && decodedAccessToken.exp < currentTime;
+
+//         if (isAccessTokenExpired) {
+//             const userIdFromAccessToken = decodedAccessToken.userId;
+
+//             // Query the database to get the stored refresh token for the user
+//             const user = await UserModel.findById(userIdFromAccessToken);
+//             if (!user || !user.refreshToken) {
+//                 // Pass the error to the next handler using next()
+//                 return next(new ApiError(401, 'No refresh token found. Please login again.'));
+//             }
+
+//             try {
+//                 // Verify the refresh token
+//                 const decodedRefreshToken = jwt.verify(user.refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+//                 // Ensure the refresh token belongs to the same user
+//                 if (decodedRefreshToken.userId !== userIdFromAccessToken) {
+//                     // Pass the error to the next handler using next()
+//                     return next(new ApiError(401, 'Refresh token does not belong to the current user.'));
+//                 }
+
+//                 // Generate a new access token and refresh token using model methods
+//                 const newAccessToken = await user.generateAccessToken();
+//                 const newRefreshToken = await user.generateRefreshToken();
+
+//                 console.log('newAccessToken :- ', newAccessToken);
+//                 console.log('newRefreshToken :- ', newRefreshToken);
+
+//                 // Save the new refresh token in the database
+//                 user.refreshToken = newRefreshToken;
+//                 await user.save(); // Save the user with the new refresh token
+
+//                 // Send the new access token and refresh token to the client (set as HTTP-only cookies)
+//                 res.cookie('accessToken', newAccessToken, { httpOnly: true, secure: true }); // Ensure HTTPS in production
+//                 res.cookie('refreshToken', newRefreshToken, { httpOnly: true, secure: true }); // Refresh token as HTTP-only cookie
+
+//                 // Attach the user to the request object for downstream usage
+//                 req.user = user;
+
+//                 return next(); // Continue to next middleware
+//             } catch (refreshErr) {
+//                 // Pass the error to the next handler using next()
+//                 return next(new ApiError(401, 'Invalid refresh token. Please login again.'));
+//             }
+//         }
+
+//         // If the access token is expired but still valid, handle token verification failure
+//         return next(new ApiError(401, 'Access token is expired or invalid. Please login again.'));
+//     }
+// };
+
+// export default VerifyJWT;
+

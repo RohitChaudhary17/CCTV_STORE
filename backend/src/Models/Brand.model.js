@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 // Define the Brand schema
 const brandSchema = new Schema(
   {
-    name: {
+    brandName: {
       type: String,
       required: true,
       unique: true,

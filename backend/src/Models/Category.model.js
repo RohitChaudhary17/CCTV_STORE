@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 // Define the Category schema
 const categorySchema = new Schema(
   {
-    name: {
+    categoryName: {
       type: String,
       required: true,
       unique: true, // Ensure no duplicate categories

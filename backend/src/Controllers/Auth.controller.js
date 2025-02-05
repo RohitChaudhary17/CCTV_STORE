@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { sendOtp } from '../Utils/Twilio.utils.js';
 import UserModel from '../Models/Users.model.js';
+import { sendSuccessResponse } from '../Utils/SuccessResponse.utils.js';
 
 
 const generateOtp = () => {
@@ -44,7 +45,9 @@ const otpLogin = async (req, res) => {
     
     await sendOtp(phoneNumber, otp);
 
-    res.status(200).json({ message: 'OTP sent successfully', phoneNumber });
+    //res.status(200).json({ message: 'OTP sent successfully', phoneNumber });
+    return sendSuccessResponse(res, 200, 'OTP sent successfully' , 'phoneNumber' , phoneNumber);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -86,7 +89,7 @@ const verifyOtp = async (req, res) => {
     user.otpExpiry = null;
     await user.save();
  
-    res.status(200)
+    return res.status(200)
     .cookie("accessToken", accessToken , options)
     // .cookie("refreshToken", refreshToken, options)
     .json({ message: 'OTP verified successfully', accessToken, user });
